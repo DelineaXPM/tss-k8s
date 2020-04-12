@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tss-injector
+  namespace: default
+spec:
+  ports:
+    - protocol: TCP
+      port: 8543
+      targetPort: 18543
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: tss-injector
+  namespace: default
+subsets:
+  - addresses:
+      - ip: "192.168.1.1"
+    ports:
+      - port: 8543
