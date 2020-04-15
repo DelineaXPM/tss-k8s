@@ -3,10 +3,10 @@ VERSION?=latest
 
 IMAGE_TAG=$(NAME):$(VERSION)
 
-#DOCKER=docker
+DOCKER=docker
 # Podman also works but it assumes that the registry is HTTPS...
-DOCKER=podman
-DOCKER_PUSH_ARGS=--tls-verify=false
+#DOCKER=podman
+#DOCKER_PUSH_ARGS=--tls-verify=false
 
 # Use the Minikube built-in kubectl by default
 KUBECTL=minikube kubectl --

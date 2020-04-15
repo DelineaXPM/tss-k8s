@@ -1,5 +1,9 @@
 # Thycotic Secret Server Kubernetes Secret Injector
 
+![Docker](https://github.com/thycotic/dsv-k8s/workflows/Docker/badge.svg)
+![GitHub Package Registry](https://github.com/thycotic/dsv-k8s/workflows/GitHub%20Package%20Registry/badge.svg)
+![Red Hat Quay](https://github.com/thycotic/tss-k8s/workflows/Red%20Hat%20Quay/badge.svg)
+
 A [Kubernetes](https://kubernetes.io/) [Mutating Webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks)
 that injects Secret data from Thycotic Secret Server (TSS) into
 Kubernetes (k8s) cluster Secrets. The webhook is made available to the
