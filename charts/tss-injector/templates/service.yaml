@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "tss.fullname" . }}
+  labels:
+    {{- include "tss.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.webhookPort }}
+      targetPort: {{ .Values.containerPort }}
+  selector:
+    {{- include "tss.selectorLabels" . | nindent 4 }}
+  type: {{ .Values.service.type }}
+{{- if eq .Values.service.type "ClusterIP" -}}
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ include "tss.fullname" . }}
+  labels:
+    {{- include "tss.labels" . | nindent 4 }}
+subsets:
+  - addresses:
+      - ip: {{ .Values.service.ipAddress }}
+    ports:
+      - port: 8543
+{{- end -}}

@@ -1,0 +1,32 @@
+{{- if .Capabilities.APIVersions.Has "admissionregistration.k8s.io/v1" -}}
+apiVersion: admissionregistration.k8s.io/v1
+{{- else -}}
+apiVersion: admissionregistration.k8s.io/v1beta1
+{{- end }}
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "tss.name" . }}
+  labels:
+    {{- include "tss.labels" . | nindent 4 }}
+webhooks:
+  - name: {{ include "tss.fullname" . }}.{{ .Release.Namespace }}.svc
+    failurePolicy: Fail
+    rules:
+      - apiGroups: [""]
+        apiVersions: ["v1", "v1beta1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["secrets"]
+{{- if .Capabilities.APIVersions.Has "admissionregistration.k8s.io/v1" }}
+        scope: {{ default "*" .Values.webhookScope }}
+{{- end }}
+    clientConfig:
+      caBundle: {{ .Values.caBundle | b64enc }}
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ include "tss.name" . }}
+        path: {{ .Values.webhookUri }}
+{{- if .Capabilities.APIVersions.Has "admissionregistration.k8s.io/v1" }}
+        port: {{ .Values.webhookPort }}
+    admissionReviewVersions: ["v1", "v1beta1"]
+    sideEffects: {{ default "None" .Values.sideEffects }}
+{{- end }}

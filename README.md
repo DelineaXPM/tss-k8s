@@ -1,131 +1,149 @@
-# Thycotic Secret Server Kubernetes Secret Injector
+# Delinea Secret Server Kubernetes Secret Injector
 
-![Docker](https://github.com/thycotic/dsv-k8s/workflows/Docker/badge.svg)
-![GitHub Package Registry](https://github.com/thycotic/dsv-k8s/workflows/GitHub%20Package%20Registry/badge.svg)
+![Docker](https://github.com/thycotic/tss-k8s/workflows/Docker/badge.svg)
+![GitHub Package Registry](https://github.com/thycotic/tss-k8s/workflows/GitHub%20Package%20Registry/badge.svg)
 ![Red Hat Quay](https://github.com/thycotic/tss-k8s/workflows/Red%20Hat%20Quay/badge.svg)
 
-A [Kubernetes](https://kubernetes.io/) [Mutating Webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks)
-that injects Secret data from Thycotic Secret Server (TSS) into
-Kubernetes (k8s) cluster Secrets. The webhook is made available to the
-Kubernetes cluster as the `tss-injector` which can be hosted in k8s or as a
-stand-alone service.
+A [Kubernetes](https://kubernetes.io/)
+[Mutating Webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks)
+that injects Secret data from Delinea Secret Server (TSS) into Kubernetes Secrets.
+The webhook can be hosted as a pod or as a stand-alone service.
 
-The webhook intercepts `CREATE` and `UPDATE` Secret admissions and supplements
-or overwrites the Secret data with Secret data from TSS. The webhook
-configuration is a set of TSS Role to Client Credential and Tenant mappings.
-The webhook updates k8s Secrets based on a set of annotations (see below).
+The webhook works by intercepting `CREATE` and `UPDATE` Secret admissions and mutating the Secret with data from tss.
+The webhook configuration consists of one or more _role_ to Client Credential Tenant mappings.
+The webhook updates Kubernetes Secrets based on annotations on the Secret itself. [See below](#use).
 
-The webhook uses the [TSS Go SDK](https://github.com/thycotic/tss-sdk-go) to
-communicate with TSS.
+The webhook uses the [Golang SDK](https://github.com/thycotic/tss-sdk-go) to communicate with the tss API.
 
-It was built and tested with [Minikube](https://minikube.sigs.k8s.io/).
+It was tested with [Minikube](https://minikube.sigs.k8s.io/) and [Minishift](https://docs.okd.io/3.11/minishift/index.html).
 
 ## Configure
 
-The webhook requires a JSON formatted list of TSS Role to username, password and
-Tenant mappings, stored in `configs/roles.json`:
+The webhook requires a JSON formatted list of _role_ to Client Credential and Tenant mappings.
+The _role_ is a simple name that does not relate to Kubernetes Roles.
+Declaring the role annotation selects which credentials to use to get the Secret from Secret Server.
 
 ```json
 {
     "my-role": {
         "credentials": {
-            "username": "user1",
-            "password": "S3cureP@55w0rd!"
+            "username": "appuser1",
+            "password": "Password1!"
         },
-        "tenant": "mytenant"
+        "tenant": "corpname"
     },
     "default": {
         "credentials": {
-            "username": "user2",
-            "password": "S00perS3cure!"
+            "username": "appuser2",
+            "password": "Password2!"
         },
-        "tenant": "anothertenant"
+        "ServerURL": "https://hostname/SecretServer"
     }
 }
 ```
 
-The _default_ Role is used when the k8s secret being modified does not
-specify a particular Role.
+NOTE: the injector uses the _default_ role when it mutates a Kubernetes Secret that does not have a _roleAnnotation_.
+
+## Run
+
+The `Makefile` demonstrates a typical installation via [Helm](https://helm.sh/).
+It creates a self-signed certificate and associated key using `get_cert.sh`.
+The Helm Chart templates the certificate and key as a Kubernetes Secret.
+It also provides `roles.json`, which the chart likewise templates as a k8s Secret.
+
+The `tss-injector` image contains the `tss-injector-svc` executable, however,
+the container should get the certificate, key, and the `roles.json` via mounts.
+
+```bash
+$ /usr/bin/tss-injector-svc -?
+flag provided but not defined: -?
+Usage of ./tss-injector-svc:
+  -cert string
+        the path of the certificate file in PEM format (default "injector.pem")
+  -hostport string
+        the host:port e.g. localhost:8080 (default ":18543")
+  -key string
+        the path of the certificate key file in PEM format (default "injector.key")
+  -roles string
+        the path of JSON formatted roles file (default "roles.json")
+```
+
+### Certificate
+
+`scripts/get_cert.sh` generates a self-signed certificate and key.
+It requires [openssl](https://www.openssl.org/).
+
+```bash
+$ sh scripts/get_cert.sh
+Usage: get_cert.sh -n NAME [OPTIONS]...
+
+        -n, -name, --name NAME
+                Maps to the host portion of the FQDN that is the subject of the
+                certificate; also the basename of the certificate and key files.
+        -d, -directory, --directory=DIRECTORY
+                The location of the resulting certificate and private-key. The
+                default is '.'
+        -N, -namespace, --namespace=NAMESPACE
+                Represents the Kubernetes cluster Namespace and maps to the
+                domain of the FQDN that is the subject of the certificate.
+                the default is 'default'
+        -b, -bits, --bits=BITS
+                the RSA key size in bits; default is 2048
+```
 
 ## Build
 
 Building the `tss-injector` image requires [Docker](https://www.docker.com/) or
 [Podman](https://podman.io/).
-
-Building and deploying the test_image requires a Kubernetes cluster.
-
-The `Makefile` defaults are based on Minikube.
-
-To build the  image run:
+To build it, run:
 
 ```sh
 make image
 ```
 
-## Test
+### Install
 
-To configure the Kubernetes cluster to to call the webhook as stand-alone
-service running on the host at `$(SERVICE_IP)`:
+Installation requires [Helm](https://helm.sh).
+
+The Helm `values.yaml` file `image.repository` is `thycotic/tss-injector`:
+
+```yaml
+image:
+  repository: thycotic/tss-injector
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+```
+
+So, by default, `make install` will pull from Docker, GitHub, or Quay.
 
 ```sh
-make deploy_host
+make install
 ```
 
-Note that `$(SERVICE_IP)` defaults to the IP address of the host executing the
-build. Also note that `localhost` will not work as an alternative.
-
-To deploy the `tss-injector` service as a POD and configure the webhook to call
-it, run:
+However, the `Makefile` contains an `install-image` target that configures Helm
+to use the image built with `make image`:
 
 ```sh
-make deploy
+make install-image
 ```
 
-### Minikube
+`make cert` exists as a shortcut for making the certificate and key.
 
-By default, the build uses Minikube and it must be up to build the test image.
+`make uninstall` uninstalls the Helm Chart.
 
-`minikube tunnel` must also be running so that the build can communicate with
-the registry unless the build uses an external `$(REGISTRY)`.
+`make clean` removes the Docker image  by calling `make clean-docker` then removes the certificate and key by calling `make clean-cert`
 
-Execute `eval $(minikube dockerenv)` in the build shell to use the Minikube
-Docker daemon.
+### Minikube and Minishift
 
-### The Registry
-
-The test image is based on the release image so the build needs to pull the
-latter to build the former.
-
-By default, the build will look for a 'registry' service on the cluster and if
-none is found it will run `minikube addons enable registry` to start one.
-
-This behavior can be overridden by specifying the registry `host:port` in
-`$(REGISTRY)`. Note that the `Makefile` does not invoke `docker login`.
-
-### The CA Certificate
-
-The WebHook uses the cluster CA certificate. The default location is
-`${HOME}/.minikube/ca.crt` but that can be overridden by setting `$(CA_CRT)`.
-
-The location of the CA certificate can be gotten from the cluster configuration:
-
-```shell
-kubectl config view -o jsonpath='{.clusters[*].cluster.certificate-authority}'
-```
-
-If that returns `null` then the certificate is embedded in the cluster configuration.
-In that case, set `$(CA_BUNDLE)` to the output of:
-
-```shell
-kubectl config view -o jsonpath='{.clusters[*].cluster.certificate-authority-data}' | tr -d '"'
-```
+Remember to run `eval $(minikube docker-env)` in the shell to push the image to Minikube's Docker daemon.
+Likewise for Minishift except its `eval $(minishift docker-env)`.
 
 ## Use
 
-Once the `tss-injector` is up and available to the Kubernetes cluster, and the
-[MutatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#mutatingadmissionwebhook) is configured to call it, any
-appropriately annotated k8s Secrets will be modified by it whenever they are
-created or updated.
+Once the `tss-injector` is available in the Kubernetes cluster, and the
+[MutatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#mutatingadmissionwebhook)
+is in place, any appropriately annotated k8s Secrets are modified on create and update.
 
 The four annotations that affect the behavior of the webhook are:
 
@@ -138,20 +156,19 @@ const(
 )
 ```
 
-`roleAnnotation` sets the TSS Role that k8s should use to access the TSS Secret
-that will be used to modify the k8s Secret. If it is present then the Role
-must exist in the above mentioned Role mappings that the webhook is configured
-to use. If it is absent then the _default_ mapping is used.
+`roleAnnotation` selects the credentials that the injector uses to retrieve the tss Secret.
+If it is present then the role must exist in the role to Client Credential and Tenant mappings.
+If it is absent then the _default_ mapping is used.
 
 The `setAnnotation`, `addAnnotation` and `updateAnnotation` contain the path to
-the TSS Secret that will be used to modified the k8s Secret being admitted.
+the tss Secret that the injector will use to mutate the submitted Kubernetes Secret.
 
 * `addAnnotation` adds missing fields without overwriting or removing existing fields.
 * `updateAnnotation` adds and overwrites existing fields but does not remove fields.
-* `setAnnotation` overwrites fields and removes fields that do not exist in the TSS Secret.
+* `setAnnotation` overwrites fields and removes fields that do not exist in the tss Secret.
 
-Only one of these should be specified on any given k8s Secret, however, if more
-than one are defined then the order of precedence is `setAnnotation` then
+A Kubernetes Secret should specify only one of these, however, if the Secret specifies more
+than one then, the order of precedence is `setAnnotation` then
 `addAnnotation` then `updateAnnotation`.
 
 ### Examples

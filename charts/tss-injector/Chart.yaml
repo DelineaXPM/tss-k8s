@@ -1,0 +1,13 @@
+apiVersion: v2
+name: tss-injector
+description: A Helm chart for the Delinea Secret Server (TSS) Injector Mutating Webhook.
+keywords:
+  - Delinea
+  - PAM
+  - secrets
+  - vault
+type: application
+version: 0.1.0
+appVersion: latest
+maintainers:
+  - name: Adam Migus
