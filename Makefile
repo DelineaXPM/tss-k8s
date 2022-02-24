@@ -3,7 +3,7 @@ HELM_CHART:=charts/$(NAME)
 VERSION?=latest
 
 # The Kubernetes Namespace that the webhook will be deployed in 📁
-NAMESPACE?=default
+NAMESPACE?=tss
 
 # Your roles.json file; see the README.md)
 ROLES_JSON?=configs/roles.json
