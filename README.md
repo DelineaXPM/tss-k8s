@@ -9,11 +9,11 @@ A [Kubernetes](https://kubernetes.io/)
 that injects Secret data from Delinea Secret Server (TSS) into Kubernetes Secrets.
 The webhook can be hosted as a pod or as a stand-alone service.
 
-The webhook works by intercepting `CREATE` and `UPDATE` Secret admissions and mutating the Secret with data from tss.
-The webhook configuration consists of one or more _role_ to Client Credential and Server mappings.
-The webhook updates Kubernetes Secrets based on annotations on the Secret itself when it is created or updated.
+The webhook works by intercepting `CREATE` and `UPDATE` Secret admissions and mutating the Secret with data from Secret Server.
+The webhook configuration is a set of _role_ to Client Credential and Server mappings.
+It updates Kubernetes Secrets based on annotations on the Secret itself.
 
-The webhook uses the [Golang SDK](https://github.com/thycotic/tss-sdk-go) to communicate with the tss API.
+The webhook uses the [Golang SDK](https://github.com/thycotic/tss-sdk-go) to communicate with the Secret Server API.
 
 It was tested with [Minikube](https://minikube.sigs.k8s.io/) and [Minishift](https://docs.okd.io/3.11/minishift/index.html).
 
@@ -21,7 +21,7 @@ It was tested with [Minikube](https://minikube.sigs.k8s.io/) and [Minishift](htt
 
 The webhook requires a JSON formatted list of _role_ to Client Credential and Tenant mappings.
 The _role_ is a simple name that does not relate to Kubernetes Roles.
-Declaring the role annotation selects which credentials to use to get the Secret from Secret Server.
+It simply selects which credentials to use to get the Secret from Secret Server.
 
 ```json
 {
@@ -63,22 +63,21 @@ Usage of ./tss-injector-svc:
         the path of JSON formatted roles file (default "roles.json")
 ```
 
-That does not prescribe a runtime but, typically, the injector is run as a POD in the Kubernetes cluster that uses it.
+Thus the injector can run "anywhere," but, typically, the injector runs as a POD in the Kubernetes cluster that uses it.
 
 ## Build
 
-Building the `tss-injector` image requires [Docker](https://www.docker.com/) or [Podman](https://podman.io/).
-To build it, run:
+_NOTE: Building the `tss-injector` image is not required to install it as it is available on multiple public registries._
+
+Building the injector requires [Docker](https://www.docker.com/) or [Podman](https://podman.io/). To build it, run:
 
 ```sh
 make image
 ```
 
-NOTE: The image has been published so building it is optional
-
 ### Minikube and Minishift
 
-Remember to run `eval $(minikube docker-env)` in the shell to push the image to Minikube's Docker daemon.
+Remember to run `eval $(minikube docker-env)` in the shell to push the image to Minikube's Docker daemon.💡
 Likewise for Minishift except its `eval $(minishift docker-env)`.
 
 ### Install
@@ -87,7 +86,6 @@ Installation requires [Helm](https://helm.sh).
 
 The `Makefile` demonstrates a typical installation via the [Helm](https://helm.sh/) chart.
 It imports `roles.json` as a file that it templates as a Kubernetes Secret for the injector.
-It also provides a (Helm-generated) self-signed certificate to the injector as a Kubernetes Secret.
 
 The Helm `values.yaml` file `image.repository` is `thycotic/tss-injector`:
 
@@ -105,8 +103,7 @@ That means, by default, `make install` will pull from Docker, GitHub, or Quay.
 make install
 ```
 
-However, the `Makefile` contains an `install-image` target that configures Helm
-to use the image built with `make image`:
+However, the `Makefile` contains an `install-image` target that configures Helm to use the image built with `make image`:
 
 ```sh
 make install-image
@@ -118,7 +115,7 @@ make install-image
 
 ### Helm and Make
 
-The use of `make` is optional. Running `helm install` works too:
+__The use of `make` is optional.__ Running `helm install` works too:
 
 ```sh
 helm install --set-file rolesJson=configs/roles.json tss-injector charts/tss-injector
@@ -126,9 +123,9 @@ helm install --set-file rolesJson=configs/roles.json tss-injector charts/tss-inj
 
 ## Use
 
-Once the `tss-injector` is available in the Kubernetes cluster, and the
+Once the injector is available in the Kubernetes cluster, and the
 [MutatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#mutatingadmissionwebhook)
-is in place, any appropriately annotated k8s Secrets are modified on create and update.
+is in place, any appropriately annotated Kubernetes Secrets are modified on create and update.
 
 The four annotations that affect the behavior of the webhook are:
 
@@ -141,20 +138,19 @@ const(
 )
 ```
 
-`roleAnnotation` selects the credentials that the injector uses to retrieve the tss Secret.
-If it is present then the role must exist in the role to Client Credential and Tenant mappings.
-If it is absent then the _default_ mapping is used.
+`roleAnnotation` selects the credentials that the injector uses to retrieve the Secret Server Secret.
+If the role is present, it must map to Client Credential and Tenant mapping.
+If the role is absent, the injector will use the _default_ Credential and Tenant a mapping.
 
-The `setAnnotation`, `addAnnotation` and `updateAnnotation` contain the path to
-the tss Secret that the injector will use to mutate the submitted Kubernetes Secret.
+The `setAnnotation`, `addAnnotation` and `updateAnnotation` specify the numeric ID of
+the Secret Server Secret that the injector will use to mutate the Kubernetes Secret.
 
 * `addAnnotation` adds missing fields without overwriting or removing existing fields.
 * `updateAnnotation` adds and overwrites existing fields but does not remove fields.
-* `setAnnotation` overwrites fields and removes fields that do not exist in the tss Secret.
+* `setAnnotation` overwrites fields and removes fields that do not exist in the Secret Server Secret.
 
-A Kubernetes Secret should specify only one of these, however, if the Secret specifies more
-than one then, the order of precedence is `setAnnotation` then
-`addAnnotation` then `updateAnnotation`.
+NOTE: A Kubernetes Secret should specify only one of the "add," "update," or "set" annotations.
+The order of precedence is `setAnnotation`, then `addAnnotation`, then `updateAnnotation` when multiple are present.
 
 ### Examples
 
@@ -173,11 +169,11 @@ data:
   private-key: b21pdHRlZAo=
 ```
 
-The above example specifies a Role so a mapping for that role must exist in the
+The above example specifies a Role, so a mapping for that role must exist in the
 current webhook configuration. It uses the `setAnnotation` so the data in the
-secret will be overwritten; if the Secret with ID 1 contains a `username` and
-`password` but no `domain` then the secret would contain the `username` and
-`password` from the TSS Secret Data and the `domain` field will be removed.
+injector will overwrite the existing contents of the Kubernetes Secret;
+if the Secret with ID 1 contains a `username` and `password` but no `domain`, then the Kubernetes Secret would get the `username` and
+`password` from the Secret Server Secret but, the injector will remove the `domain` field.
 
 There are more examples in the `examples` directory. Each one will show
 how each annotation works when run against an example with a username and
