@@ -1,1 +1,6 @@
-{{ include "tss.fullname" . }} is now available in the {{ .Release.Namespace }} namespace on port {{ .Values.service.port }}
+✨ The {{ include "tss.fullname" . }} Mutating Webhook ✨
+
+📂 Namepsace: {{ .Release.Namespace }}
+
+🔗 Url: https://{{ include "tss.dnsname" . }}:{{ .Values.service.port }}{{ .Values.webhookUri }}
+

@@ -1,6 +1,8 @@
+---
+{{- $cert := genSelfSignedCert (include "tss.dnsname" .) nil (list (include "tss.dnsname" .) (include "tss.name" .)) (default 365 .Values.webhookCertExpireDays | int) -}}
 {{- if .Capabilities.APIVersions.Has "admissionregistration.k8s.io/v1" -}}
 apiVersion: admissionregistration.k8s.io/v1
-{{- else -}}
+{{- else }}
 apiVersion: admissionregistration.k8s.io/v1beta1
 {{- end }}
 kind: MutatingWebhookConfiguration
@@ -9,7 +11,7 @@ metadata:
   labels:
     {{- include "tss.labels" . | nindent 4 }}
 webhooks:
-  - name: {{ include "tss.fullname" . }}.{{ .Release.Namespace }}.svc
+  - name: {{ include "tss.dnsname" . }}
     failurePolicy: Fail
     rules:
       - apiGroups: [""]
@@ -20,7 +22,7 @@ webhooks:
         scope: {{ default "*" .Values.webhookScope }}
 {{- end }}
     clientConfig:
-      caBundle: {{ .Values.caBundle | b64enc }}
+      caBundle: {{ $cert.Cert | b64enc }}
       service:
         namespace: {{ .Release.Namespace }}
         name: {{ include "tss.name" . }}
@@ -30,3 +32,12 @@ webhooks:
     admissionReviewVersions: ["v1", "v1beta1"]
     sideEffects: {{ default "None" .Values.sideEffects }}
 {{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "tss.name" . }}-tls
+data:
+  cert: {{ $cert.Cert | b64enc }}
+  key: {{ $cert.Key | b64enc }}
+type: Opaque

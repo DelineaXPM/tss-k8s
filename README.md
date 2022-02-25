@@ -10,8 +10,8 @@ that injects Secret data from Delinea Secret Server (TSS) into Kubernetes Secret
 The webhook can be hosted as a pod or as a stand-alone service.
 
 The webhook works by intercepting `CREATE` and `UPDATE` Secret admissions and mutating the Secret with data from tss.
-The webhook configuration consists of one or more _role_ to Client Credential Tenant mappings.
-The webhook updates Kubernetes Secrets based on annotations on the Secret itself. [See below](#use).
+The webhook configuration consists of one or more _role_ to Client Credential and Server mappings.
+The webhook updates Kubernetes Secrets based on annotations on the Secret itself when it is created or updated.
 
 The webhook uses the [Golang SDK](https://github.com/thycotic/tss-sdk-go) to communicate with the tss API.
 
@@ -43,16 +43,11 @@ Declaring the role annotation selects which credentials to use to get the Secret
 ```
 
 NOTE: the injector uses the _default_ role when it mutates a Kubernetes Secret that does not have a _roleAnnotation_.
+[See below](#use).
 
 ## Run
 
-The `Makefile` demonstrates a typical installation via [Helm](https://helm.sh/).
-It creates a self-signed certificate and associated key using `get_cert.sh`.
-The Helm Chart templates the certificate and key as a Kubernetes Secret.
-It also provides `roles.json`, which the chart likewise templates as a k8s Secret.
-
-The `tss-injector` image contains the `tss-injector-svc` executable, however,
-the container should get the certificate, key, and the `roles.json` via mounts.
+The injector is a Golang executable that runs a built-in HTTPS server hosting the Kubernetes Mutating Webhook Webservice.
 
 ```bash
 $ /usr/bin/tss-injector-svc -?
@@ -68,42 +63,31 @@ Usage of ./tss-injector-svc:
         the path of JSON formatted roles file (default "roles.json")
 ```
 
-### Certificate
-
-`scripts/get_cert.sh` generates a self-signed certificate and key.
-It requires [openssl](https://www.openssl.org/).
-
-```bash
-$ sh scripts/get_cert.sh
-Usage: get_cert.sh -n NAME [OPTIONS]...
-
-        -n, -name, --name NAME
-                Maps to the host portion of the FQDN that is the subject of the
-                certificate; also the basename of the certificate and key files.
-        -d, -directory, --directory=DIRECTORY
-                The location of the resulting certificate and private-key. The
-                default is '.'
-        -N, -namespace, --namespace=NAMESPACE
-                Represents the Kubernetes cluster Namespace and maps to the
-                domain of the FQDN that is the subject of the certificate.
-                the default is 'default'
-        -b, -bits, --bits=BITS
-                the RSA key size in bits; default is 2048
-```
+That does not prescribe a runtime but, typically, the injector is run as a POD in the Kubernetes cluster that uses it.
 
 ## Build
 
-Building the `tss-injector` image requires [Docker](https://www.docker.com/) or
-[Podman](https://podman.io/).
+Building the `tss-injector` image requires [Docker](https://www.docker.com/) or [Podman](https://podman.io/).
 To build it, run:
 
 ```sh
 make image
 ```
 
+NOTE: The image has been published so building it is optional
+
+### Minikube and Minishift
+
+Remember to run `eval $(minikube docker-env)` in the shell to push the image to Minikube's Docker daemon.
+Likewise for Minishift except its `eval $(minishift docker-env)`.
+
 ### Install
 
 Installation requires [Helm](https://helm.sh).
+
+The `Makefile` demonstrates a typical installation via the [Helm](https://helm.sh/) chart.
+It imports `roles.json` as a file that it templates as a Kubernetes Secret for the injector.
+It also provides a (Helm-generated) self-signed certificate to the injector as a Kubernetes Secret.
 
 The Helm `values.yaml` file `image.repository` is `thycotic/tss-injector`:
 
@@ -115,7 +99,7 @@ image:
   tag: ""
 ```
 
-So, by default, `make install` will pull from Docker, GitHub, or Quay.
+That means, by default, `make install` will pull from Docker, GitHub, or Quay.
 
 ```sh
 make install
@@ -128,16 +112,17 @@ to use the image built with `make image`:
 make install-image
 ```
 
-`make cert` exists as a shortcut for making the certificate and key.
-
 `make uninstall` uninstalls the Helm Chart.
 
-`make clean` removes the Docker image  by calling `make clean-docker` then removes the certificate and key by calling `make clean-cert`
+`make clean` removes the Docker image.
 
-### Minikube and Minishift
+### Helm and Make
 
-Remember to run `eval $(minikube docker-env)` in the shell to push the image to Minikube's Docker daemon.
-Likewise for Minishift except its `eval $(minishift docker-env)`.
+The use of `make` is optional. Running `helm install` works too:
+
+```sh
+helm install --set-file rolesJson=configs/roles.json tss-injector charts/tss-injector
+```
 
 ## Use
 
