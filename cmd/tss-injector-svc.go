@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/thycotic/tss-k8s/pkg/injector"
+	"github.com/DelineaXPM/tss-k8s/v2/pkg/injector"
 
 	v1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
