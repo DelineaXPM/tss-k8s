@@ -163,10 +163,10 @@ The four annotations that affect the behavior of the webhook are:
 
 ```golang
 const(
-    roleAnnotation   = "tss.secretsvaultcloud.com/role"
-    setAnnotation    = "tss.secretsvaultcloud.com/set-secret"
-    addNotation      = "tss.secretsvaultcloud.com/add-to-secret"
-    updateAnnotation = "tss.secretsvaultcloud.com/update-secret"
+    roleAnnotation   = "secretserver.delinea.com/role"
+    setAnnotation    = "secretserver.delinea.com/set-secret"
+    addNotation      = "secretserver.delinea.com/add-to-secret"
+    updateAnnotation = "secretserver.delinea.com/update-secret"
 )
 ```
 
@@ -193,8 +193,8 @@ kind: Secret
 metadata:
   name: example-secret
   annotations:
-    tss.secretsvaultcloud.com/role: my-role
-    tss.secretsvaultcloud.com/set-secret: "1"
+    secretserver.delinea.com/role: my-role
+    secretserver.delinea.com/set-secret: "1"
 type: Opaque
 data:
   username: dW5tb2RpZmllZC11c2VybmFtZQ==

@@ -24,11 +24,11 @@ updateAnnotation adds and overwrites existing fields but does not remove fields
 setAnnotation overwrites fields and removes fields that do not exist in the TSS Secret
 */
 const (
-	roleAnnotation   = "tss.secretsvaultcloud.com/role"
-	setAnnotation    = "tss.secretsvaultcloud.com/set-secret"
-	addNotation      = "tss.secretsvaultcloud.com/add-to-secret"
-	updateAnnotation = "tss.secretsvaultcloud.com/update-secret"
-	tsAnnotation     = "tss.secretsvaultcloud.com/modified"
+	roleAnnotation   = "secretserver.delinea.com/role"
+	setAnnotation    = "secretserver.delinea.com/set-secret"
+	addNotation      = "secretserver.delinea.com/add-to-secret"
+	updateAnnotation = "secretserver.delinea.com/update-secret"
+	tsAnnotation     = "secretserver.delinea.com/modified"
 )
 
 /*
