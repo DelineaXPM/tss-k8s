@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/mattbaird/jsonpatch"
-	"github.com/thycotic/tss-sdk-go/server"
+	"github.com/DelineaXPM/tss-sdk-go/v2/server"
 	v1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,11 +24,11 @@ updateAnnotation adds and overwrites existing fields but does not remove fields
 setAnnotation overwrites fields and removes fields that do not exist in the TSS Secret
 */
 const (
-	roleAnnotation   = "tss.thycotic.com/role"
-	setAnnotation    = "tss.thycotic.com/set-secret"
-	addNotation      = "tss.thycotic.com/add-to-secret"
-	updateAnnotation = "tss.thycotic.com/update-secret"
-	tsAnnotation     = "tss.thycotic.com/modified"
+	roleAnnotation   = "secretserver.delinea.com/role"
+	setAnnotation    = "secretserver.delinea.com/set-secret"
+	addNotation      = "secretserver.delinea.com/add-to-secret"
+	updateAnnotation = "secretserver.delinea.com/update-secret"
+	tsAnnotation     = "secretserver.delinea.com/modified"
 )
 
 /*

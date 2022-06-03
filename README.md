@@ -1,8 +1,8 @@
 # Delinea Secret Server Kubernetes Secret Injector
 
-![Docker](https://github.com/thycotic/tss-k8s/workflows/Docker/badge.svg)
-![GitHub Package Registry](https://github.com/thycotic/tss-k8s/workflows/GitHub%20Package%20Registry/badge.svg)
-![Red Hat Quay](https://github.com/thycotic/tss-k8s/workflows/Red%20Hat%20Quay/badge.svg)
+![Docker](https://github.com/DelineaXPM/tss-k8s/workflows/Docker/badge.svg)
+![GitHub Package Registry](https://github.com/DelineaXPM/tss-k8s/workflows/GitHub%20Package%20Registry/badge.svg)
+![Red Hat Quay](https://github.com/DelineaXPM/tss-k8s/workflows/Red%20Hat%20Quay/badge.svg)
 
 A [Kubernetes](https://kubernetes.io/)
 [Mutating Webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks)
@@ -13,7 +13,7 @@ The webhook works by intercepting `CREATE` and `UPDATE` Secret admissions and mu
 The webhook configuration is a set of _role_ to Client Credential and Server mappings.
 It updates Kubernetes Secrets based on annotations on the Secret itself.
 
-The webhook uses the [Golang SDK](https://github.com/thycotic/tss-sdk-go) to communicate with the Secret Server API.
+The webhook uses the [Golang SDK](https://github.com/DelineaXPM/tss-sdk-go) to communicate with the Secret Server API.
 
 It was tested with [Minikube](https://minikube.sigs.k8s.io/) and [Minishift](https://docs.okd.io/3.11/minishift/index.html).
 
@@ -163,10 +163,10 @@ The four annotations that affect the behavior of the webhook are:
 
 ```golang
 const(
-    roleAnnotation   = "tss.thycotic.com/role"
-    setAnnotation    = "tss.thycotic.com/set-secret"
-    addNotation      = "tss.thycotic.com/add-to-secret"
-    updateAnnotation = "tss.thycotic.com/update-secret"
+    roleAnnotation   = "secretserver.delinea.com/role"
+    setAnnotation    = "secretserver.delinea.com/set-secret"
+    addNotation      = "secretserver.delinea.com/add-to-secret"
+    updateAnnotation = "secretserver.delinea.com/update-secret"
 )
 ```
 
@@ -193,8 +193,8 @@ kind: Secret
 metadata:
   name: example-secret
   annotations:
-    tss.thycotic.com/role: my-role
-    tss.thycotic.com/set-secret: "1"
+    secretserver.delinea.com/role: my-role
+    secretserver.delinea.com/set-secret: "1"
 type: Opaque
 data:
   username: dW5tb2RpZmllZC11c2VybmFtZQ==
