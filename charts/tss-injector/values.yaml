@@ -64,6 +64,9 @@ webhookCertExpireDays: 1825
 # containerPort is the port that the container itself listens on
 containerPort: 18543
 
+# Secret name for rolesJson containing JSON-formatted roles file
+rolesJsonSecretName: 
+
 # rolesJson contains the JSON-formatted roles file (see README.md)
 rolesJson: >-
   {
