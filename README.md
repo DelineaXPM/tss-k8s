@@ -23,24 +23,6 @@ The webhook requires a JSON formatted list of _role_ to Client Credential and Te
 The _role_ is a simple name that does not relate to Kubernetes Roles.
 It simply selects which credentials to use to get the Secret from Secret Server.
 
-```json
-{
-    "my-role": {
-        "credentials": {
-            "username": "appuser1",
-            "password": "Password1!"
-        },
-        "tenant": "corpname"
-    },
-    "default": {
-        "credentials": {
-            "username": "appuser2",
-            "password": "Password2!"
-        },
-        "ServerURL": "https://hostname/SecretServer"
-    }
-}
-```
 
 NOTE: the injector uses the _default_ role when it mutates a Kubernetes Secret that does not have a _roleAnnotation_.
 [See below](#use).
@@ -185,27 +167,6 @@ NOTE: A Kubernetes Secret should specify only one of the "add," "update," or "se
 The order of precedence is `setAnnotation`, then `addAnnotation`, then `updateAnnotation` when multiple are present.
 
 ### Examples
-
-```yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: example-secret
-  annotations:
-    secretserver.delinea.com/role: my-role
-    secretserver.delinea.com/set-secret: "1"
-type: Opaque
-data:
-  username: dW5tb2RpZmllZC11c2VybmFtZQ==
-  private-key: b21pdHRlZAo=
-```
-
-The above example specifies a Role, so a mapping for that role must exist in the
-current webhook configuration. It uses the `setAnnotation` so the data in the
-injector will overwrite the existing contents of the Kubernetes Secret;
-if the Secret with ID 1 contains a `username` and `password` but no `domain`, then the Kubernetes Secret would get the `username` and
-`password` from the Secret Server Secret but, the injector will remove the `domain` field.
 
 There are more examples in the `examples` directory. Each one will show
 how each annotation works when run against an example with a username and
