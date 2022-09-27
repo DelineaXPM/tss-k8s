@@ -55,7 +55,11 @@ spec:
       volumes:
         - name: roles
           secret:
+            {{- if .Values.rolesJsonSecretName }}
+            secretName: {{ .Values.rolesJsonSecretName }}
+            {{- else }}
             secretName: {{ include "tss.name" . }}-roles
+            {{- end }}
         - name: tls
           secret:
             secretName: {{ include "tss.name" . }}-tls
