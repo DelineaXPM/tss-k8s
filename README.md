@@ -4,6 +4,12 @@
 ![GitHub Package Registry](https://github.com/DelineaXPM/tss-k8s/workflows/GitHub%20Package%20Registry/badge.svg)
 ![Red Hat Quay](https://github.com/DelineaXPM/tss-k8s/workflows/Red%20Hat%20Quay/badge.svg)
 
+# PUBLIC ARCHIVE
+
+> ***NOTE***
+> This repo is archived and no longer supported. Delinea no longer supports this integration and will not push any further code udates, but the repo can be cloned / forked for others to use at their own risk.
+
+
 A [Kubernetes](https://kubernetes.io/)
 [Mutating Webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks)
 that injects Secret data from Delinea Secret Server (TSS) into Kubernetes Secrets.
